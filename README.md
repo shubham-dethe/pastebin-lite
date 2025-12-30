@@ -1,40 +1,174 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+A lightweight Pastebin-like service built with Next.js and Redis (Upstash) that allows users to create temporary text pastes with expiration time and view limits.
 
-## Getting Started
+This project was implemented as a take-home assignment, focusing on clean API design, correctness, and production deployment.
 
-First, run the development server:
+🚀 Live Demo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Production URL (Vercel):
+👉 https://pastebin-lite-nine.vercel.app
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+📦 Features
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+✅ Create text pastes via REST API
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+✅ Auto-generated short IDs
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+✅ Optional expiration (TTL-based)
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+✅ Optional maximum view count
 
-## Learn More
+✅ Automatic cleanup on expiration or view limit
 
-To learn more about Next.js, take a look at the following resources:
+✅ Redis-backed persistence (Upstash)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+✅ Deployed on Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+🛠 Tech Stack
 
-## Deploy on Vercel
+Framework: Next.js (Pages Router)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Database: Upstash Redis (REST-based)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+Deployment: Vercel
+
+Utilities: nanoid
+
+🔐 Environment Variables
+
+The following environment variables are required:
+
+UPSTASH_REDIS_REST_URL=xxxx_upstash_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=xxxx_upstash_redis_rest_token
+
+
+These must be configured both locally (.env.local) and in Vercel → Project → Settings → Environment Variables.
+
+🔍 API Endpoints
+1️⃣ Health Check
+
+GET /api/healthz
+
+Response
+
+{ "ok": true }
+
+2️⃣ Create a Paste
+
+POST /api/pastes
+
+Request Body
+
+{
+  "content": "Hello Pastebin Lite",
+  "expiresIn": 3600,
+  "maxViews": 3
+}
+
+
+expiresIn (optional): Expiration time in seconds
+
+maxViews (optional): Maximum number of allowed views
+
+Response
+
+{
+  "id": "AbC123",
+  "url": "/p/AbC123"
+}
+
+3️⃣ Retrieve a Paste
+
+GET /api/pastes/:id
+
+Response
+
+{
+  "content": "Hello Pastebin Lite",
+  "remaining_views": 2,
+  "expires_at": "2025-01-01T10:30:00.000Z"
+}
+
+
+Error Cases
+
+404 – Paste not found
+
+404 – Paste expired
+
+404 – View limit exceeded
+
+View count is decremented only on API access, not on UI page renders.
+
+🖥 Paste Viewer UI
+
+Each paste can be viewed in the browser using:
+
+/p/:id
+
+
+Example:
+
+https://pastebin-lite-nine.vercel.app/p/AbC123
+
+
+This page fetches the paste content via the API and displays it in a minimal UI.
+
+🧠 Implementation Details
+🔹 Expiration (TTL)
+
+Expiration is enforced using a timestamp (expires_at)
+
+Expired pastes are deleted automatically on access
+
+🔹 View Limits
+
+remaining_views is decremented on each successful API fetch
+
+When it reaches zero, the paste is deleted
+
+🔹 Redis Key Format
+paste:<id>
+
+
+Each key stores a JSON payload:
+
+{
+  "content": "text",
+  "remaining_views": 3,
+  "expires_at": 1735713000000
+}
+
+🧪 Testing the API (Example)
+
+Open DevTools Console on the deployed site and run:
+
+fetch("/api/pastes", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    content: "Hello from Vercel",
+    expiresIn: 60,
+    maxViews: 2
+  })
+})
+.then(res => res.json())
+.then(console.log);
+
+
+Then open:
+
+/p/<id>
+
+🚀 Deployment
+
+Continuous deployment via GitHub → Vercel
+
+Each push to the main branch triggers a new deployment
+
+📌 Submission Links
+
+GitHub Repository:
+https://github.com/shubham-dethe/pastebin-lite
+
+Live Deployment:
+https://pastebin-lite-nine.vercel.app
